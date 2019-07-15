@@ -3,7 +3,6 @@ package raftcache
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 
 	"google.golang.org/grpc"
@@ -32,7 +31,7 @@ func NewGRPCHTTPServer(node *RaftNode) (server *GRPCServer, err error) {
 func (s *GRPCServer) Start() error {
 	listener, err := net.Listen("tcp", s.node.ListenAddr)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		return err
 	}
 	s.node.ListenAddr = listener.Addr().(*net.TCPAddr).String()
 	return s.server.Serve(listener)
