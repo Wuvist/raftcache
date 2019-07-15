@@ -50,32 +50,32 @@ func TestJoin(t *testing.T) {
 	client := NewRaftCacheClient(conn)
 
 	n := new(Node)
-	resp, err := client.Join(context.Background(), n)
+	resp, _ := client.Join(context.Background(), n)
 	if resp.Result != JoinResp_REJECTED || resp.Message != "Invalid group name" {
 		t.Errorf("Should not jion: %s", resp)
 	}
 
 	n.Group = "test"
 	n.Status = Node_INGROUP
-	resp, err = client.Join(context.Background(), n)
+	resp, _ = client.Join(context.Background(), n)
 	if resp.Result != JoinResp_REJECTED || resp.Message != "Invalid group status INGROUP" {
 		t.Errorf("Should not jion: %s", resp)
 	}
 
 	n.Status = Node_ALONE
 	n.Group = "test"
-	resp, err = client.Join(context.Background(), n)
+	resp, _ = client.Join(context.Background(), n)
 	if resp.Result != JoinResp_SUCCESS {
 		t.Errorf("Invalid Join result %s", resp)
 	}
 
-	resp, err = client.Join(context.Background(), n)
+	resp, _ = client.Join(context.Background(), n)
 	if resp.Result != JoinResp_ALREADYJOINED || resp.Message != "already in group" {
 		t.Errorf("Invalid Join result %s", resp)
 	}
 
 	s1.node.Status = Node_DISCONNECTED
-	resp, err = client.Join(context.Background(), n)
+	resp, _ = client.Join(context.Background(), n)
 	if resp.Result != JoinResp_REJECTED || resp.Message != "Can't join a disconnected node" {
 		t.Errorf("Invalid Join result %s", resp)
 	}
