@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package raftcache;
+
+message Node {
+    string AdminAddr = 1;
+    string ServeAddr = 2;
+}
+
+message JoinResp {
+    string status = 1;
+}
+
+message LeaveResp {
+    string status = 1;
+}
+
+service RaftCache {
+    rpc Join(Node) returns(JoinResp){};
+    rpc Leave(Node) returns(LeaveResp){};
+}
