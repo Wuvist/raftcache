@@ -11,29 +11,36 @@ import (
 
 // GRPCServer represent a raft cache server using gRPC
 type GRPCServer struct {
-	node *RaftNode
+	node   *RaftNode
+	server *grpc.Server
 }
 
 // NewGRPCHTTPServer return a server for given node
 func NewGRPCHTTPServer(node *RaftNode) (server *GRPCServer, err error) {
-	server = &GRPCServer{node}
+	var n = *node
+
+	server = &GRPCServer{
+		node:   &n,
+		server: grpc.NewServer(),
+	}
+
+	RegisterRaftCacheServer(server.server, server)
 	return
 }
 
-// Start start the server
+// Start the grpc server, and block
 func (s *GRPCServer) Start() error {
 	listener, err := net.Listen("tcp", s.node.ListenAddr)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s.node.ListenAddr = listener.Addr().(*net.TCPAddr).String()
+	return s.server.Serve(listener)
+}
 
-	grpcServer := grpc.NewServer()
-	RegisterRaftCacheServer(grpcServer, s)
-
-	go grpcServer.Serve(listener)
-
-	return nil
+// Stop the grpc server
+func (s *GRPCServer) Stop() {
+	s.server.Stop()
 }
 
 func (s *GRPCServer) String() string {
