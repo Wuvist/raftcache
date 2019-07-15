@@ -42,7 +42,7 @@ func (s *GRPCServer) String() string {
 
 // Join take given node to join into group
 func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
-	return nil, nil
+	return s.node.Join(in)
 }
 
 // Leave take given node out of group
