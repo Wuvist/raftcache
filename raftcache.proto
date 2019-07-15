@@ -3,19 +3,32 @@ syntax = "proto3";
 package raftcache;
 
 message Node {
-    string AdminAddr = 1;
-    string ServeAddr = 2;
+  enum Statuses {
+    ALONE = 0;
+    INGROUP = 1;
+    DISCONNECTED = 2;
+  }
+
+  string Group = 1;
+  string AdminAddr = 2;
+  string ListenAddr = 3;
+  Statuses Status = 4;
 }
 
 message JoinResp {
-    string status = 1;
+  enum Results {
+    SUCCESS = 0;
+    ALREADYJOINED = 1;
+    REJECTED = 2;
+  }
+
+  Results Result = 1;
+  repeated Node GroupNodes = 2;
 }
 
-message LeaveResp {
-    string status = 1;
-}
+message LeaveResp {}
 
 service RaftCache {
-    rpc Join(Node) returns(JoinResp){};
-    rpc Leave(Node) returns(LeaveResp){};
+  rpc Join(Node) returns (JoinResp) {};
+  rpc Leave(Node) returns (LeaveResp) {};
 }
