@@ -7,11 +7,11 @@ type RaftNode struct {
 	Node
 }
 
-// NewRaftNode returns new raftnode with given adminAddr, listenAddr
-func NewRaftNode(adminAddr, listenAddr string) (node *RaftNode, err error) {
+// NewRaftNode returns new raftnode with given group, listenAddr
+func NewRaftNode(group, listenAddr string) (node *RaftNode, err error) {
 	node = &RaftNode{}
 	node.Status = Node_ALONE
-	node.AdminAddr = adminAddr
 	node.ListenAddr = listenAddr
+	node.Group = group
 	return
 }

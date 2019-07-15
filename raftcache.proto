@@ -10,9 +10,8 @@ message Node {
   }
 
   string Group = 1;
-  string AdminAddr = 2;
-  string ListenAddr = 3;
-  Statuses Status = 4;
+  string ListenAddr = 2;
+  Statuses Status = 3;
 }
 
 message JoinResp {
@@ -23,7 +22,8 @@ message JoinResp {
   }
 
   Results Result = 1;
-  repeated Node GroupNodes = 2;
+  string Message = 2;
+  repeated Node GroupNodes = 3;
 }
 
 message LeaveResp {}
