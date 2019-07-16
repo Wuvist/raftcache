@@ -6,12 +6,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"google.golang.org/grpc"
 )
-
-var s1 *GRPCServer
 
 // An AtomicInt is an int64 to be accessed atomically.
 // Take from https://github.com/golang/groupcache/blob/master/groupcache.go#L467
@@ -31,24 +28,24 @@ func (i *AtomicInt) String() string {
 	return strconv.FormatInt(i.Get(), 10)
 }
 
-func init() {
-	node, err := NewRaftNode("test", ":0")
+func getServer(group, listenAddr string) *GRPCServer {
+	node, err := NewRaftNode(group, listenAddr)
 	if err != nil {
 		panic(err)
 	}
 
-	s1, err = NewGRPCHTTPServer(node)
+	s, err := NewGRPCHTTPServer(node)
 	if err != nil {
 		panic(err)
 	}
-	go s1.Start()
+	s.Prepare()
+	go s.Start()
 
-	// Make sure s1 started
-	time.Sleep(1 * time.Millisecond)
-	println(s1.String())
+	s.Wait()
+	return s
 }
 
-func TestServer(t *testing.T) {
+func TestServerFail(t *testing.T) {
 	node, err := NewRaftNode("test", "-1")
 	if err != nil {
 		t.Fatal(err)
@@ -56,26 +53,26 @@ func TestServer(t *testing.T) {
 
 	server, err := NewGRPCHTTPServer(node)
 	if err != nil {
-		println(err)
 		t.Fatal(err)
 	}
 	err = server.Start()
 	if err == nil {
 		t.Error("server should not start")
 	}
+
+	println(server.String())
 }
 
-func testJoin(t *testing.T) {
-	conn, err := grpc.Dial(s1.node.ListenAddr, grpc.WithInsecure())
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestJoin(t *testing.T) {
+	s := getServer("test", ":0")
+	client, conn := getClient(s)
 	defer conn.Close()
 
-	client := NewRaftCacheClient(conn)
-
 	n := new(Node)
-	resp, _ := client.Join(context.Background(), n)
+	resp, err := client.Join(context.Background(), n)
+	if err != nil {
+		t.Error(err)
+	}
 	if resp.Result != JoinResp_REJECTED || resp.Message != "Invalid group name" {
 		t.Errorf("Should not jion: %s", resp)
 	}
@@ -99,16 +96,17 @@ func testJoin(t *testing.T) {
 		t.Errorf("Invalid Join result %s", resp)
 	}
 
-	s1.node.Status = Node_DISCONNECTED
+	s.node.Status = Node_DISCONNECTED
 	resp, _ = client.Join(context.Background(), n)
 	if resp.Result != JoinResp_REJECTED || resp.Message != "Can't join a disconnected node" {
 		t.Errorf("Invalid Join result %s", resp)
 	}
-	s1.node.Status = Node_ALONE
+
+	s.Stop()
 }
 
-func getClient() (RaftCacheClient, *grpc.ClientConn) {
-	conn, err := grpc.Dial(s1.node.ListenAddr, grpc.WithInsecure())
+func getClient(s *GRPCServer) (RaftCacheClient, *grpc.ClientConn) {
+	conn, err := grpc.Dial(s.node.ListenAddr, grpc.WithInsecure())
 	if err != nil {
 		panic(err)
 	}
@@ -118,7 +116,8 @@ func getClient() (RaftCacheClient, *grpc.ClientConn) {
 }
 
 func TestJoinConcurrent(t *testing.T) {
-	client, conn := getClient()
+	s := getServer("test", ":0")
+	client, conn := getClient(s)
 	defer conn.Close()
 
 	var wg sync.WaitGroup
@@ -151,14 +150,11 @@ func TestJoinConcurrent(t *testing.T) {
 }
 
 func TestLeave(t *testing.T) {
-	conn, err := grpc.Dial(s1.node.ListenAddr, grpc.WithInsecure())
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getServer("test", ":0")
+	client, conn := getClient(s)
 	defer conn.Close()
 
-	client := NewRaftCacheClient(conn)
 	n := new(Node)
 	client.Leave(context.Background(), n)
-	s1.Stop()
+	s.Stop()
 }

@@ -1,6 +1,9 @@
 package raftcache
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
 //go:generate protoc raftcache.proto --go_out=plugins=grpc:.
 
@@ -9,6 +12,8 @@ type RaftNode struct {
 	Node
 	GroupNodes []Node
 }
+
+var mu sync.Mutex
 
 // NewRaftNode returns new raftnode with given group, listenAddr
 func NewRaftNode(group, listenAddr string) (node *RaftNode, err error) {
@@ -21,6 +26,9 @@ func NewRaftNode(group, listenAddr string) (node *RaftNode, err error) {
 
 // Join add a new node to current node
 func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
+	mu.Lock()
+	defer mu.Unlock()
+
 	resp = &JoinResp{}
 	if r.Group != node.Group {
 		resp.Result = JoinResp_REJECTED

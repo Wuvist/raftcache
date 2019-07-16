@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
 
 	"google.golang.org/grpc"
 )
@@ -12,6 +13,7 @@ import (
 type GRPCServer struct {
 	node   *RaftNode
 	server *grpc.Server
+	wg     sync.WaitGroup
 }
 
 // NewGRPCHTTPServer return a server for given node
@@ -34,7 +36,18 @@ func (s *GRPCServer) Start() error {
 		return err
 	}
 	s.node.ListenAddr = listener.Addr().(*net.TCPAddr).String()
+	s.wg.Done()
 	return s.server.Serve(listener)
+}
+
+// Prepare add count to wait group
+func (s *GRPCServer) Prepare() {
+	s.wg.Add(1)
+}
+
+// Wait for binding to ListenAddr
+func (s *GRPCServer) Wait() {
+	s.wg.Wait()
 }
 
 // Stop the grpc server
