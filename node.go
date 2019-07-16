@@ -1,5 +1,7 @@
 package raftcache
 
+import "time"
+
 //go:generate protoc raftcache.proto --go_out=plugins=grpc:.
 
 // RaftNode represent a node in raftcache
@@ -54,6 +56,7 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 		r.GroupNodes = append(r.GroupNodes, r.Node)
 	}
 
+	time.Sleep(1 * time.Microsecond)
 	r.GroupNodes = append(r.GroupNodes, newNode)
 
 	return
