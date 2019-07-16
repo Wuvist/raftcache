@@ -29,6 +29,17 @@ func NewGRPCHTTPServer(node *RaftNode) (server *GRPCServer, err error) {
 	return
 }
 
+func (s *GRPCServer) getClient(listenAddr string) (client RaftCacheClient, conn *grpc.ClientConn, err error) {
+	conn, err = grpc.Dial(listenAddr, grpc.WithInsecure())
+	if err != nil {
+		return
+	}
+
+	client = NewRaftCacheClient(conn)
+
+	return
+}
+
 // Start the grpc server, and block
 func (s *GRPCServer) Start() error {
 	listener, err := net.Listen("tcp", s.node.ListenAddr)
@@ -66,6 +77,22 @@ func (s *GRPCServer) Ping(ctx context.Context, in *Empty) (*Empty, error) {
 
 // Join take given node to join into group
 func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
+	client, conn, err := s.getClient(in.ListenAddr)
+	if err != nil {
+		s := &JoinResp{}
+		s.Result = JoinResp_PINGFAIL
+		return s, nil
+	}
+
+	defer conn.Close()
+
+	_, err = client.Ping(ctx, &Empty{})
+	if err != nil {
+		s := &JoinResp{}
+		s.Result = JoinResp_PINGFAIL
+		return s, nil
+	}
+
 	return s.node.Join(in)
 }
 

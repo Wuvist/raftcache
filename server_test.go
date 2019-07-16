@@ -64,11 +64,17 @@ func TestServerFail(t *testing.T) {
 }
 
 func TestJoin(t *testing.T) {
-	s := getServer("test", ":0")
-	client, conn := getClient(s)
+	s1 := getServer("test", ":0")
+	defer s1.Stop()
+	client, conn := getClient(s1)
 	defer conn.Close()
 
+	s2 := getServer("test", ":0")
+	defer s2.Stop()
+
 	n := new(Node)
+	n.ListenAddr = s2.node.ListenAddr
+
 	resp, err := client.Join(context.Background(), n)
 	if err != nil {
 		t.Error(err)
@@ -96,13 +102,11 @@ func TestJoin(t *testing.T) {
 		t.Errorf("Invalid Join result %s", resp)
 	}
 
-	s.node.Status = Node_DISCONNECTED
+	s1.node.Status = Node_DISCONNECTED
 	resp, _ = client.Join(context.Background(), n)
 	if resp.Result != JoinResp_REJECTED || resp.Message != "Can't join a disconnected node" {
 		t.Errorf("Invalid Join result %s", resp)
 	}
-
-	s.Stop()
 }
 
 func getClient(s *GRPCServer) (RaftCacheClient, *grpc.ClientConn) {
@@ -116,13 +120,19 @@ func getClient(s *GRPCServer) (RaftCacheClient, *grpc.ClientConn) {
 }
 
 func TestJoinConcurrent(t *testing.T) {
-	s := getServer("test", ":0")
-	client, conn := getClient(s)
+	s1 := getServer("test", ":0")
+	defer s1.Stop()
+
+	client, conn := getClient(s1)
 	defer conn.Close()
+
+	s2 := getServer("test", ":0")
+	defer s2.Stop()
 
 	var wg sync.WaitGroup
 
 	n := new(Node)
+	n.ListenAddr = s2.node.ListenAddr
 	n.Status = Node_ALONE
 	n.Group = "test"
 	var successCount AtomicInt

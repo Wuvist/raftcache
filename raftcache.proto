@@ -19,6 +19,7 @@ message JoinResp {
     SUCCESS = 0;
     ALREADYJOINED = 1;
     REJECTED = 2;
+    PINGFAIL = 3;
   }
 
   Results Result = 1;
