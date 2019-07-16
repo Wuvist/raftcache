@@ -158,3 +158,17 @@ func TestLeave(t *testing.T) {
 	client.Leave(context.Background(), n)
 	s.Stop()
 }
+
+func TestPing(t *testing.T) {
+	s := getServer("test", ":0")
+	defer s.Stop()
+
+	client, conn := getClient(s)
+	defer conn.Close()
+
+	n := new(Empty)
+	_, err := client.Ping(context.Background(), n)
+	if err != nil {
+		t.Error(err)
+	}
+}

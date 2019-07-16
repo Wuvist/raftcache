@@ -59,6 +59,11 @@ func (s *GRPCServer) String() string {
 	return fmt.Sprintf("Node: %s", s.node.String())
 }
 
+// Ping for server's health checking
+func (s *GRPCServer) Ping(ctx context.Context, in *Empty) (*Empty, error) {
+	return &Empty{}, nil
+}
+
 // Join take given node to join into group
 func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 	return s.node.Join(in)

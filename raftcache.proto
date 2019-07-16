@@ -26,9 +26,12 @@ message JoinResp {
   repeated Node GroupNodes = 3;
 }
 
+message Empty {}
+
 message LeaveResp {}
 
 service RaftCache {
+  rpc Ping(Empty) returns (Empty) {};
   rpc Join(Node) returns (JoinResp) {};
   rpc Leave(Node) returns (LeaveResp) {};
 }
