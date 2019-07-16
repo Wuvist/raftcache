@@ -63,6 +63,22 @@ func TestServerFail(t *testing.T) {
 	println(server.String())
 }
 
+func TestJoinSelf(t *testing.T) {
+	s1 := getServer("test", ":0")
+	defer s1.Stop()
+	client, conn := getClient(s1)
+	defer conn.Close()
+
+	n := new(Node)
+	n.Group = "test"
+	n.ListenAddr = s1.node.ListenAddr
+
+	resp, _ := client.Join(context.Background(), n)
+	if resp.Result != JoinResp_ALREADYJOINED || resp.Message != "Can't join self" {
+		t.Errorf("Invalid Join result %s", resp)
+	}
+}
+
 func TestJoin(t *testing.T) {
 	s1 := getServer("test", ":0")
 	defer s1.Stop()
@@ -98,7 +114,7 @@ func TestJoin(t *testing.T) {
 	}
 
 	resp, _ = client.Join(context.Background(), n)
-	if resp.Result != JoinResp_ALREADYJOINED || resp.Message != "already in group" {
+	if resp.Result != JoinResp_ALREADYJOINED || resp.Message != "Already in group" {
 		t.Errorf("Invalid Join result %s", resp)
 	}
 

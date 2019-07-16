@@ -48,10 +48,19 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 		return
 	}
 
+	if len(r.GroupNodes) == 0 {
+		r.GroupNodes = append(r.GroupNodes, r.Node)
+	}
+
 	for _, n := range r.GroupNodes {
 		if n.ListenAddr == node.ListenAddr {
 			resp.Result = JoinResp_ALREADYJOINED
-			resp.Message = "already in group"
+			if n.ListenAddr == r.ListenAddr {
+				resp.Message = "Can't join self"
+			} else {
+				resp.Message = "Already in group"
+			}
+
 			return
 		}
 	}
@@ -59,9 +68,8 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 	var newNode Node = *node
 	newNode.Status = Node_INGROUP
 
-	if len(r.GroupNodes) == 0 {
+	if r.Status == Node_ALONE {
 		r.Status = Node_INGROUP
-		r.GroupNodes = append(r.GroupNodes, r.Node)
 	}
 
 	time.Sleep(1 * time.Microsecond)
