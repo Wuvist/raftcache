@@ -98,5 +98,5 @@ func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 
 // Leave take given node out of group
 func (s *GRPCServer) Leave(ctx context.Context, in *Node) (*LeaveResp, error) {
-	return &LeaveResp{}, nil
+	return s.node.Leave(in)
 }

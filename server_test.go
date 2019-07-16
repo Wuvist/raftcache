@@ -177,12 +177,54 @@ func TestJoinConcurrent(t *testing.T) {
 
 func TestLeave(t *testing.T) {
 	s := getServer("test", ":0")
+	defer s.Stop()
 	client, conn := getClient(s)
 	defer conn.Close()
 
 	n := new(Node)
-	client.Leave(context.Background(), n)
-	s.Stop()
+	resp, err := client.Leave(context.Background(), n)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if resp.Result != LeaveResp_REJECTED || resp.Message != "Invalid group name" {
+		t.Error("Shouldn't leave: " + resp.String())
+	}
+
+	n.Group = "test"
+	resp, err = client.Leave(context.Background(), n)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if resp.Result != LeaveResp_NOTINGROUP || resp.Message != "" {
+		t.Error("Shouldn't leave: " + resp.String())
+	}
+
+	n.ListenAddr = s.node.ListenAddr
+	resp, err = client.Leave(context.Background(), n)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if resp.Result != LeaveResp_REJECTED || resp.Message != "Can't leave self" {
+		t.Error("Shouldn't leave: " + resp.String())
+	}
+
+	s2 := getServer("test", ":0")
+	defer s2.Stop()
+	n.ListenAddr = s2.node.ListenAddr
+	n.Status = Node_ALONE
+	client.Join(context.Background(), n)
+
+	resp, err = client.Leave(context.Background(), n)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if resp.Result != LeaveResp_SUCCESS {
+		t.Error("Fail to leave: " + resp.String())
+	}
 }
 
 func TestPing(t *testing.T) {

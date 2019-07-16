@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package raftcache;
 
+message Empty {}
+
 message Node {
   enum Statuses {
     ALONE = 0;
@@ -27,9 +29,16 @@ message JoinResp {
   repeated Node GroupNodes = 3;
 }
 
-message Empty {}
+message LeaveResp {
+  enum Results {
+    SUCCESS = 0;
+    REJECTED = 1;
+    NOTINGROUP = 2;
+  }
 
-message LeaveResp {}
+  Results Result = 1;
+  string Message = 2;
+}
 
 service RaftCache {
   rpc Ping(Empty) returns (Empty) {};

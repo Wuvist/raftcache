@@ -24,10 +24,18 @@ func NewRaftNode(group, listenAddr string) (node *RaftNode, err error) {
 	return
 }
 
+func (r *RaftNode) initGroupNodes() {
+	if len(r.GroupNodes) == 0 {
+		r.GroupNodes = append(r.GroupNodes, r.Node)
+	}
+}
+
 // Join add a new node to current node
 func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 	mu.Lock()
 	defer mu.Unlock()
+
+	r.initGroupNodes()
 
 	resp = &JoinResp{}
 	if r.Group != node.Group {
@@ -46,10 +54,6 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 		resp.Result = JoinResp_REJECTED
 		resp.Message = "Invalid group status INGROUP"
 		return
-	}
-
-	if len(r.GroupNodes) == 0 {
-		r.GroupNodes = append(r.GroupNodes, r.Node)
 	}
 
 	for _, n := range r.GroupNodes {
@@ -75,5 +79,48 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 	time.Sleep(1 * time.Microsecond)
 	r.GroupNodes = append(r.GroupNodes, newNode)
 
+	return
+}
+
+// Leave take away given node from group
+func (r *RaftNode) Leave(node *Node) (resp *LeaveResp, err error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	r.initGroupNodes()
+	resp = &LeaveResp{}
+
+	if node.ListenAddr == r.ListenAddr {
+		resp.Result = LeaveResp_REJECTED
+		resp.Message = "Can't leave self"
+		return
+	}
+
+	if node.Group != r.Group {
+		resp.Result = LeaveResp_REJECTED
+		resp.Message = "Invalid group name"
+		return
+	}
+
+	nodes := make([]Node, 0, len(r.GroupNodes))
+
+	for _, n := range r.GroupNodes {
+		if n.ListenAddr != node.ListenAddr {
+			nodes = append(nodes, n)
+		}
+	}
+
+	if len(nodes) == len(r.GroupNodes) {
+		resp.Result = LeaveResp_NOTINGROUP
+		return
+	}
+
+	r.GroupNodes = nodes
+
+	if len(r.GroupNodes) == 1 {
+		r.Status = Node_ALONE
+	}
+
+	resp.Result = LeaveResp_SUCCESS
 	return
 }
