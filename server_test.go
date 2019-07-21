@@ -60,7 +60,9 @@ func TestServerFail(t *testing.T) {
 		t.Error("server should not start")
 	}
 
-	println(server.String())
+	if server.String() != `Node: Group:"test" ListenAddr:"-1" ` {
+		t.Error("server should not start")
+	}
 }
 
 func TestJoinSelf(t *testing.T) {
