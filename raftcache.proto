@@ -9,6 +9,8 @@ message Node {
     ALONE = 0;
     INGROUP = 1;
     DISCONNECTED = 2;
+    INITIATING = 3;
+    HANDSHAKING = 4;
   }
 
   string Group = 1;
