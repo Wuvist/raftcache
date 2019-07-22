@@ -17,6 +17,7 @@
   - [ ] Handshake
   - [ ] Confirm
 - [ ] Cancel handshake
+- [ ] Join return GroupNodes
 - [ ] Why if peer confirmed join, but failed to reply?
 
 ## disconnect
