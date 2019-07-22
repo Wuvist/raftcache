@@ -77,11 +77,12 @@ func (r *RaftNode) ValidateJoin(node *Node) (resp *JoinResp) {
 		return
 	}
 
-	if r.Status == Node_HANDSHAKING {
-		resp.Result = JoinResp_TRYLATER
-		resp.Message = "Current node is handshaking"
-		return
-	}
+	// todo: should validate Node_HANDSHAKING ip
+	// if r.Status == Node_HANDSHAKING {
+	// 	resp.Result = JoinResp_TRYLATER
+	// 	resp.Message = "Current node is handshaking"
+	// 	return
+	// }
 
 	if r.Status == Node_DISCONNECTED {
 		resp.Result = JoinResp_REJECTED

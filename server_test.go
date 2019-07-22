@@ -116,6 +116,27 @@ func TestJoin(t *testing.T) {
 	}
 }
 
+func TestMultiJoin(t *testing.T) {
+	s1 := getServer("test", ":0")
+	defer s1.Stop()
+
+	s2 := getServer("test", ":0")
+	defer s2.Stop()
+
+	s3 := getServer("test", ":0")
+	defer s2.Stop()
+
+	resp, _ := s1.peerJoin(s2.node.ListenAddr)
+	if resp.Result != JoinResp_SUCCESS {
+		t.Errorf("Invalid Join result %s", resp)
+	}
+
+	resp, _ = s3.peerJoin(s2.node.ListenAddr)
+	if resp.Result != JoinResp_SUCCESS {
+		t.Errorf("Invalid Join result %s", resp)
+	}
+}
+
 func getClient(s *GRPCServer) (RaftCacheClient, *grpc.ClientConn) {
 	conn, err := grpc.Dial(s.node.ListenAddr, grpc.WithInsecure())
 	if err != nil {
