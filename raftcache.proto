@@ -24,6 +24,7 @@ message JoinResp {
     ALREADYJOINED = 1;
     REJECTED = 2;
     PINGFAIL = 3;
+    TRYLATER = 4;
   }
 
   Results Result = 1;

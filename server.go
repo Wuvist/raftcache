@@ -14,6 +14,7 @@ type GRPCServer struct {
 	node   *RaftNode
 	server *grpc.Server
 	wg     sync.WaitGroup
+	mu     sync.Mutex
 }
 
 // NewGRPCHTTPServer return a server for given node

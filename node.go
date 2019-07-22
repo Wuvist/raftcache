@@ -44,6 +44,12 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 		return
 	}
 
+	if r.Status == Node_HANDSHAKING {
+		resp.Result = JoinResp_TRYLATER
+		resp.Message = "Current node is handshaking"
+		return
+	}
+
 	if r.Status == Node_DISCONNECTED {
 		resp.Result = JoinResp_REJECTED
 		resp.Message = "Can't join a disconnected node"
