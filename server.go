@@ -131,6 +131,16 @@ func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 	return s.node.Join(in)
 }
 
+// JoinConfirm confirm join requet for peer nodes
+func (s *GRPCServer) JoinConfirm(ctx context.Context, in *Node) (*JoinConfirmResp, error) {
+	return nil, nil
+}
+
+// Handshake forwards join request to peer node for handshake validation
+func (s *GRPCServer) Handshake(ctx context.Context, in *Node) (*HandshakeResp, error) {
+	return nil, nil
+}
+
 // Leave take given node out of group
 func (s *GRPCServer) Leave(ctx context.Context, in *Node) (*LeaveResp, error) {
 	return s.node.Leave(in)

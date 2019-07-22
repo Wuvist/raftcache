@@ -43,8 +43,30 @@ message LeaveResp {
   string Message = 2;
 }
 
+message HandshakeResp {
+  enum Results {
+    SUCCESS = 0;
+    FAILED = 1;
+  }
+
+  Results Result = 1;
+  string Message = 2;
+}
+
+message JoinConfirmResp {
+  enum Results {
+    SUCCESS = 0;
+    FAILED = 1;
+  }
+
+  Results Result = 1;
+  string Message = 2;
+}
+
 service RaftCache {
   rpc Ping(Empty) returns (Empty) {};
   rpc Join(Node) returns (JoinResp) {};
   rpc Leave(Node) returns (LeaveResp) {};
+  rpc Handshake(Node) returns (HandshakeResp) {};
+  rpc JoinConfirm(Node) returns (JoinConfirmResp) {};
 }
