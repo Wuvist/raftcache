@@ -1,6 +1,7 @@
 package raftcache
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -11,9 +12,22 @@ import (
 type RaftNode struct {
 	Node
 	GroupNodes []Node
+	muStatus   sync.Mutex
+	mu         sync.Mutex
 }
 
-var mu sync.Mutex
+/*
+Node Status state machine
+
+* Once a node joined a group, it could never return Node_Alone
+*/
+var nodeStatueStateMachine = map[Node_Statuses][]Node_Statuses{
+	Node_ALONE:        {Node_INITIATING, Node_HANDSHAKING},
+	Node_INITIATING:   {Node_ALONE, Node_INGROUP},
+	Node_HANDSHAKING:  {Node_INGROUP, Node_DISCONNECTED},
+	Node_INGROUP:      {Node_HANDSHAKING, Node_DISCONNECTED},
+	Node_DISCONNECTED: {Node_HANDSHAKING},
+}
 
 // NewRaftNode returns new raftnode with given group, listenAddr
 func NewRaftNode(group, listenAddr string) (node *RaftNode, err error) {
@@ -24,7 +38,26 @@ func NewRaftNode(group, listenAddr string) (node *RaftNode, err error) {
 	return
 }
 
+// SetStatus set the node with new status; state machine checking is enforced
+func (r *RaftNode) SetStatus(status Node_Statuses) error {
+	r.muStatus.Lock()
+	defer r.muStatus.Unlock()
+
+	possibleStatues := nodeStatueStateMachine[status]
+	for _, s := range possibleStatues {
+		if s == status {
+			r.Status = status
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Not allow to set status from %s to %s", r.Status.String(), status.String())
+}
+
 func (r *RaftNode) initGroupNodes() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if len(r.GroupNodes) == 0 {
 		r.GroupNodes = append(r.GroupNodes, r.Node)
 	}
@@ -32,9 +65,6 @@ func (r *RaftNode) initGroupNodes() {
 
 // Join add a new node to current node
 func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
-	mu.Lock()
-	defer mu.Unlock()
-
 	r.initGroupNodes()
 
 	resp = &JoinResp{}
@@ -75,11 +105,14 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 		}
 	}
 
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	var newNode Node = *node
 	newNode.Status = Node_INGROUP
 
 	if r.Status == Node_ALONE {
-		r.Status = Node_INGROUP
+		r.SetStatus(Node_INGROUP)
 	}
 
 	time.Sleep(1 * time.Microsecond)
@@ -90,10 +123,8 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 
 // Leave take away given node from group
 func (r *RaftNode) Leave(node *Node) (resp *LeaveResp, err error) {
-	mu.Lock()
-	defer mu.Unlock()
-
 	r.initGroupNodes()
+
 	resp = &LeaveResp{}
 
 	if node.ListenAddr == r.ListenAddr {
@@ -107,6 +138,9 @@ func (r *RaftNode) Leave(node *Node) (resp *LeaveResp, err error) {
 		resp.Message = "Invalid group name"
 		return
 	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	nodes := make([]Node, 0, len(r.GroupNodes))
 
@@ -124,7 +158,7 @@ func (r *RaftNode) Leave(node *Node) (resp *LeaveResp, err error) {
 	r.GroupNodes = nodes
 
 	if len(r.GroupNodes) == 1 {
-		r.Status = Node_ALONE
+		r.SetStatus(Node_ALONE)
 	}
 
 	resp.Result = LeaveResp_SUCCESS

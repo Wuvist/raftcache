@@ -19,10 +19,13 @@ type GRPCServer struct {
 
 // NewGRPCHTTPServer return a server for given node
 func NewGRPCHTTPServer(node *RaftNode) (server *GRPCServer, err error) {
-	var n = *node
+	n := &RaftNode{
+		Node:       node.Node,
+		GroupNodes: node.GroupNodes,
+	}
 
 	server = &GRPCServer{
-		node:   &n,
+		node:   n,
 		server: grpc.NewServer(),
 	}
 
