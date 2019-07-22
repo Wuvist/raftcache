@@ -2,6 +2,7 @@ package raftcache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"sync"
@@ -77,6 +78,36 @@ func (s *GRPCServer) String() string {
 // Ping for server's health checking
 func (s *GRPCServer) Ping(ctx context.Context, in *Empty) (*Empty, error) {
 	return &Empty{}, nil
+}
+
+// peerJoin join the server with peer
+func (s *GRPCServer) peerJoin(listenAddr string) (*JoinResp, error) {
+	err := s.node.SetStatus(Node_INITIATING)
+	if err != nil {
+		return nil, err
+	}
+
+	client, conn, err := s.getClient(listenAddr)
+	if err != nil {
+		s.node.SetStatus(Node_ALONE)
+		return nil, err
+	}
+	defer conn.Close()
+
+	result, err := client.Join(context.Background(), &s.node.Node)
+	if err != nil {
+		s.node.SetStatus(Node_ALONE)
+		return nil, err
+	}
+
+	if result.Result != JoinResp_SUCCESS {
+		s.node.SetStatus(Node_ALONE)
+		return result, errors.New("Join server failed: " + result.Result.String())
+	}
+
+	s.node.SetStatus(Node_INGROUP)
+
+	return result, nil
 }
 
 // Join take given node to join into group
