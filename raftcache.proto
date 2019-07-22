@@ -46,7 +46,8 @@ message LeaveResp {
 message HandshakeResp {
   enum Results {
     SUCCESS = 0;
-    FAILED = 1;
+    PINGFAIL = 1;
+    TRYLATER = 2;
   }
 
   Results Result = 1;

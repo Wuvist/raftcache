@@ -39,19 +39,20 @@ func NewRaftNode(group, listenAddr string) (node *RaftNode, err error) {
 }
 
 // SetStatus set the node with new status; state machine checking is enforced
-func (r *RaftNode) SetStatus(status Node_Statuses) error {
+func (r *RaftNode) SetStatus(status Node_Statuses) (existingStatus Node_Statuses, err error) {
 	r.muStatus.Lock()
 	defer r.muStatus.Unlock()
 
+	existingStatus = r.Status
 	possibleStatues := nodeStatueStateMachine[r.Status]
 	for _, s := range possibleStatues {
 		if s == status {
 			r.Status = status
-			return nil
+			return existingStatus, nil
 		}
 	}
 
-	return fmt.Errorf("Not allow to set status from %s to %s", r.Status.String(), status.String())
+	return existingStatus, fmt.Errorf("Not allow to set status from %s to %s", r.Status.String(), status.String())
 }
 
 func (r *RaftNode) initGroupNodes() {
@@ -63,11 +64,13 @@ func (r *RaftNode) initGroupNodes() {
 	}
 }
 
-// Join add a new node to current node
-func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
+// ValidateJoin validates if given node could be joined
+func (r *RaftNode) ValidateJoin(node *Node) (resp *JoinResp) {
 	r.initGroupNodes()
 
 	resp = &JoinResp{}
+	resp.Result = JoinResp_SUCCESS
+
 	if r.Group != node.Group {
 		resp.Result = JoinResp_REJECTED
 		resp.Message = "Invalid group name"
@@ -105,8 +108,18 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 		}
 	}
 
+	return
+}
+
+// Join add a new node to current node
+func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	resp = r.ValidateJoin(node)
+	if resp.Result != JoinResp_SUCCESS {
+		return
+	}
 
 	var newNode Node = *node
 	newNode.Status = Node_INGROUP

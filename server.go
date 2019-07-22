@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"sync"
 
@@ -82,7 +83,7 @@ func (s *GRPCServer) Ping(ctx context.Context, in *Empty) (*Empty, error) {
 
 // peerJoin join the server with peer
 func (s *GRPCServer) peerJoin(listenAddr string) (*JoinResp, error) {
-	err := s.node.SetStatus(Node_INITIATING)
+	_, err := s.node.SetStatus(Node_INITIATING)
 	if err != nil {
 		return nil, err
 	}
@@ -110,35 +111,127 @@ func (s *GRPCServer) peerJoin(listenAddr string) (*JoinResp, error) {
 	return result, nil
 }
 
-// Join take given node to join into group
-func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
-	client, conn, err := s.getClient(in.ListenAddr)
+func (s *GRPCServer) peerPing(listenAddr string) error {
+	client, conn, err := s.getClient(listenAddr)
 	if err != nil {
-		s := &JoinResp{}
-		s.Result = JoinResp_PINGFAIL
-		return s, nil
+		return err
 	}
-
 	defer conn.Close()
 
-	_, err = client.Ping(ctx, &Empty{})
+	_, err = client.Ping(context.Background(), &Empty{})
 	if err != nil {
-		s := &JoinResp{}
-		s.Result = JoinResp_PINGFAIL
-		return s, nil
+		return err
 	}
 
-	return s.node.Join(in)
+	return nil
+}
+
+func (s *GRPCServer) peerHandshake(listenAddr string, in *Node) (*HandshakeResp, error) {
+	client, conn, err := s.getClient(listenAddr)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	return client.Handshake(context.Background(), in)
+}
+
+func (s *GRPCServer) peerJoinConfirm(listenAddr string, in *Node) (*JoinConfirmResp, error) {
+	client, conn, err := s.getClient(listenAddr)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	return client.JoinConfirm(context.Background(), in)
+}
+
+// Join take given node to join into group
+func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
+	r := s.node.ValidateJoin(in)
+	if r.Result != JoinResp_SUCCESS {
+		return r, nil
+	}
+
+	existingStatus, err := s.node.SetStatus(Node_HANDSHAKING)
+	if err != nil {
+		r.Result = JoinResp_TRYLATER
+		r.Message = err.Error()
+		return r, nil
+	}
+
+	err = s.peerPing(in.ListenAddr)
+	if err != nil {
+		s.node.SetStatus(existingStatus)
+		r.Result = JoinResp_PINGFAIL
+		return r, nil
+	}
+
+	for _, node := range s.node.GroupNodes {
+		handshakeResult, err := s.peerHandshake(node.ListenAddr, in)
+		if err != nil || handshakeResult.Result != HandshakeResp_SUCCESS {
+			s.node.SetStatus(existingStatus)
+			r.Result = JoinResp_PINGFAIL
+			return r, nil
+		}
+	}
+
+	for _, node := range s.node.GroupNodes {
+		joinConfirmResult, err := s.peerJoinConfirm(node.ListenAddr, in)
+		if err != nil || joinConfirmResult.Result != JoinConfirmResp_SUCCESS {
+			log.Println("ConfirmJoin error: " + node.ListenAddr + " " + joinConfirmResult.String())
+		}
+	}
+
+	r, err = s.node.Join(in)
+
+	return r, err
 }
 
 // JoinConfirm confirm join requet for peer nodes
 func (s *GRPCServer) JoinConfirm(ctx context.Context, in *Node) (*JoinConfirmResp, error) {
-	return nil, nil
+	r := &JoinConfirmResp{}
+
+	joinResult, err := s.node.Join(in)
+	if err != nil {
+		r.Result = JoinConfirmResp_FAILED
+		r.Message = err.Error()
+		return r, nil
+	}
+
+	if joinResult.Result != JoinResp_SUCCESS {
+		r.Result = JoinConfirmResp_FAILED
+		r.Message = joinResult.Result.String()
+		return r, nil
+	}
+
+	s.node.SetStatus(Node_INGROUP)
+	r.Result = JoinConfirmResp_SUCCESS
+
+	return r, nil
 }
 
 // Handshake forwards join request to peer node for handshake validation
 func (s *GRPCServer) Handshake(ctx context.Context, in *Node) (*HandshakeResp, error) {
-	return nil, nil
+	r := &HandshakeResp{}
+	_, err := s.node.SetStatus(Node_HANDSHAKING)
+	if err != nil {
+		r.Result = HandshakeResp_TRYLATER
+		r.Message = "Status wrong, try later"
+		return r, nil
+	}
+
+	err = s.peerPing(in.ListenAddr)
+	if err != nil {
+		s.node.SetStatus(Node_INGROUP)
+		r.Result = HandshakeResp_PINGFAIL
+		return r, nil
+	}
+
+	// todo: now must set timeout
+	r.Result = HandshakeResp_SUCCESS
+
+	return r, nil
 }
 
 // Leave take given node out of group
