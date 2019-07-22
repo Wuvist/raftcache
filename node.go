@@ -24,7 +24,7 @@ Node Status state machine
 var nodeStatueStateMachine = map[Node_Statuses][]Node_Statuses{
 	Node_ALONE:        {Node_INITIATING, Node_HANDSHAKING},
 	Node_INITIATING:   {Node_ALONE, Node_INGROUP},
-	Node_HANDSHAKING:  {Node_INGROUP, Node_DISCONNECTED},
+	Node_HANDSHAKING:  {Node_ALONE, Node_INGROUP, Node_DISCONNECTED},
 	Node_INGROUP:      {Node_HANDSHAKING, Node_DISCONNECTED},
 	Node_DISCONNECTED: {Node_HANDSHAKING},
 }
@@ -113,13 +113,13 @@ func (r *RaftNode) ValidateJoin(node *Node) (resp *JoinResp) {
 
 // Join add a new node to current node
 func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	resp = r.ValidateJoin(node)
 	if resp.Result != JoinResp_SUCCESS {
 		return
 	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	var newNode Node = *node
 	newNode.Status = Node_INGROUP

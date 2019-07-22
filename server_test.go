@@ -79,44 +79,38 @@ func TestJoinSelf(t *testing.T) {
 func TestJoin(t *testing.T) {
 	s1 := getServer("test", ":0")
 	defer s1.Stop()
-	client, conn := getClient(s1)
-	defer conn.Close()
 
 	s2 := getServer("test", ":0")
 	defer s2.Stop()
 
-	n := new(Node)
-	n.ListenAddr = s2.node.ListenAddr
-
-	resp, err := client.Join(context.Background(), n)
-	if err != nil {
-		t.Error(err)
-	}
+	s1.node.Group = ""
+	resp, _ := s1.peerJoin(s2.node.ListenAddr)
 	if resp.Result != JoinResp_REJECTED || resp.Message != "Invalid group name" {
 		t.Errorf("Should not jion: %s", resp)
 	}
 
-	n.Group = "test"
-	n.Status = Node_INGROUP
-	resp, _ = client.Join(context.Background(), n)
-	if resp.Result != JoinResp_REJECTED || resp.Message != "Invalid group status INGROUP" {
+	s1.node.Group = "test"
+	s1.node.Status = Node_INGROUP
+	_, err := s1.peerJoin(s2.node.ListenAddr)
+	if err == nil || err.Error() != "Not allow to set status from INGROUP to INITIATING" {
 		t.Errorf("Should not jion: %s", resp)
 	}
 
-	n.Status = Node_ALONE
-	n.Group = "test"
-	resp, _ = client.Join(context.Background(), n)
+	s1.node.Status = Node_ALONE
+	s1.node.Group = "test"
+	resp, _ = s1.peerJoin(s2.node.ListenAddr)
 	if resp.Result != JoinResp_SUCCESS {
 		t.Errorf("Invalid Join result %s", resp)
 	}
 
-	resp, _ = client.Join(context.Background(), n)
+	s1.node.Status = Node_ALONE
+	resp, _ = s1.peerJoin(s2.node.ListenAddr)
 	if resp.Result != JoinResp_ALREADYJOINED || resp.Message != "Already in group" {
 		t.Errorf("Invalid Join result %s", resp)
 	}
 
-	s1.node.Status = Node_DISCONNECTED
-	resp, _ = client.Join(context.Background(), n)
+	s2.node.Status = Node_DISCONNECTED
+	resp, err = s1.peerJoin(s2.node.ListenAddr)
 	if resp.Result != JoinResp_REJECTED || resp.Message != "Can't join a disconnected node" {
 		t.Errorf("Invalid Join result %s", resp)
 	}
