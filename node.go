@@ -43,7 +43,7 @@ func (r *RaftNode) SetStatus(status Node_Statuses) error {
 	r.muStatus.Lock()
 	defer r.muStatus.Unlock()
 
-	possibleStatues := nodeStatueStateMachine[status]
+	possibleStatues := nodeStatueStateMachine[r.Status]
 	for _, s := range possibleStatues {
 		if s == status {
 			r.Status = status
