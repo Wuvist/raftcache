@@ -116,6 +116,26 @@ func TestJoin(t *testing.T) {
 	}
 }
 
+func checkServerGroup(t *testing.T, serverGroup []*GRPCServer) {
+	for _, testServer := range serverGroup {
+		for _, checkServer := range serverGroup {
+			if !checkServerInGroup(testServer.node.ListenAddr, checkServer) {
+				t.Errorf("Cann't find server %s in group", testServer.node.ListenAddr)
+			}
+		}
+	}
+}
+
+func checkServerInGroup(listenAddr string, s *GRPCServer) bool {
+	for _, n := range s.node.GroupNodes {
+		if listenAddr == n.ListenAddr {
+			return true
+		}
+	}
+
+	return false
+}
+
 func TestMultiJoin(t *testing.T) {
 	s1 := getServer("test", ":0")
 	defer s1.Stop()
@@ -131,10 +151,14 @@ func TestMultiJoin(t *testing.T) {
 		t.Errorf("Invalid Join result %s", resp)
 	}
 
+	checkServerGroup(t, []*GRPCServer{s1, s2})
+
 	resp, _ = s3.peerJoin(s2.node.ListenAddr)
 	if resp.Result != JoinResp_SUCCESS {
 		t.Errorf("Invalid Join result %s", resp)
 	}
+
+	checkServerGroup(t, []*GRPCServer{s1, s2, s3})
 }
 
 func getClient(s *GRPCServer) (RaftCacheClient, *grpc.ClientConn) {
