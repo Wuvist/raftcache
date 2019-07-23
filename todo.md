@@ -11,7 +11,7 @@
 - [ ] leave during handshaking
   - [ ] test
 - [ ] validate client IP?
-- [ ] ConfirmJoin check listenAddr with handshake
+- [X] ConfirmJoin check listenAddr with handshake
 - [ ] Add timeout
   - [ ] Jion
   - [ ] Handshake
@@ -19,6 +19,8 @@
 - [ ] Cancel handshake
 - [ ] Join return GroupNodes
 - [ ] Why if peer confirmed join, but failed to reply?
+
+## quorum
 
 ## disconnect
 

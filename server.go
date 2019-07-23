@@ -107,6 +107,12 @@ func (s *GRPCServer) peerJoin(listenAddr string) (*JoinResp, error) {
 	}
 
 	s.node.SetStatus(Node_INGROUP, "")
+	groupNodes := make([]Node, len(result.GroupNodes))
+	for i, n := range result.GroupNodes {
+		groupNodes[i] = *n
+	}
+
+	s.node.GroupNodes = groupNodes
 
 	return result, nil
 }
@@ -192,7 +198,7 @@ func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 	}
 
 	// Should record handshaking addr
-	s.node.SetStatus(existingStatus, "")
+	s.node.SetStatus(Node_INGROUP, "")
 
 	return s.node.Join(in)
 }

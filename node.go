@@ -134,8 +134,11 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	var newNode Node = *node
-	newNode.Status = Node_INGROUP
+	newNode := Node{
+		Group:      node.Group,
+		ListenAddr: node.ListenAddr,
+		Status:     Node_INGROUP,
+	}
 
 	if r.Status == Node_ALONE {
 		r.SetStatus(Node_INGROUP, "")
@@ -143,6 +146,19 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 
 	time.Sleep(1 * time.Microsecond)
 	r.GroupNodes = append(r.GroupNodes, newNode)
+
+	groupNodes := make([]*Node, len(r.GroupNodes))
+	for i, n := range r.GroupNodes {
+		if n.Status != Node_INGROUP && n.ListenAddr == r.ListenAddr {
+			r.GroupNodes[i].Status = Node_INGROUP
+		}
+		groupNodes[i] = &Node{
+			Group:      n.Group,
+			ListenAddr: n.ListenAddr,
+			Status:     Node_INGROUP,
+		}
+	}
+	resp.GroupNodes = groupNodes
 
 	return
 }
