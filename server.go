@@ -143,15 +143,15 @@ func (s *GRPCServer) peerHandshake(listenAddr string, in *Node) (*HandshakeResp,
 	return client.Handshake(context.Background(), in)
 }
 
-func (s *GRPCServer) peerJoinConfirm(listenAddr string, in *Node) (*JoinConfirmResp, error) {
-	println("peerJoinConfirm: " + listenAddr)
+func (s *GRPCServer) peerHandshakeConfirm(listenAddr string, in *Node) (*HandshakeConfirmResp, error) {
+	println("peerHandshakeConfirm: " + listenAddr)
 	client, conn, err := s.getClient(listenAddr)
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 
-	return client.JoinConfirm(context.Background(), in)
+	return client.HandshakeConfirm(context.Background(), in)
 }
 
 // Join take given node to join into group
@@ -191,9 +191,9 @@ func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 		if node.ListenAddr == s.node.ListenAddr {
 			continue
 		}
-		joinConfirmResult, err := s.peerJoinConfirm(node.ListenAddr, in)
-		if err != nil || joinConfirmResult.Result != JoinConfirmResp_SUCCESS {
-			log.Println("ConfirmJoin error: " + node.ListenAddr + " " + joinConfirmResult.String())
+		handshakeConfirmResult, err := s.peerHandshakeConfirm(node.ListenAddr, in)
+		if err != nil || handshakeConfirmResult.Result != HandshakeConfirmResp_SUCCESS {
+			log.Println("ConfirmJoin error: " + node.ListenAddr + " " + handshakeConfirmResult.String())
 		}
 	}
 
@@ -202,25 +202,25 @@ func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 	return s.node.Join(in)
 }
 
-// JoinConfirm confirm join requet for peer nodes
-func (s *GRPCServer) JoinConfirm(ctx context.Context, in *Node) (*JoinConfirmResp, error) {
-	r := &JoinConfirmResp{}
+// HandshakeConfirm confirm join requet for peer nodes
+func (s *GRPCServer) HandshakeConfirm(ctx context.Context, in *Node) (*HandshakeConfirmResp, error) {
+	r := &HandshakeConfirmResp{}
 
 	joinResult, err := s.node.Join(in)
 	if err != nil {
-		r.Result = JoinConfirmResp_FAILED
+		r.Result = HandshakeConfirmResp_FAILED
 		r.Message = err.Error()
 		return r, nil
 	}
 
 	if joinResult.Result != JoinResp_SUCCESS {
-		r.Result = JoinConfirmResp_FAILED
+		r.Result = HandshakeConfirmResp_FAILED
 		r.Message = joinResult.Result.String()
 		return r, nil
 	}
 
 	s.node.SetStatus(Node_INGROUP, "")
-	r.Result = JoinConfirmResp_SUCCESS
+	r.Result = HandshakeConfirmResp_SUCCESS
 
 	return r, nil
 }

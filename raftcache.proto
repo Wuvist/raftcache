@@ -54,7 +54,7 @@ message HandshakeResp {
   string Message = 2;
 }
 
-message JoinConfirmResp {
+message HandshakeConfirmResp {
   enum Results {
     SUCCESS = 0;
     FAILED = 1;
@@ -69,5 +69,5 @@ service RaftCache {
   rpc Join(Node) returns (JoinResp) {};
   rpc Leave(Node) returns (LeaveResp) {};
   rpc Handshake(Node) returns (HandshakeResp) {};
-  rpc JoinConfirm(Node) returns (JoinConfirmResp) {};
+  rpc HandshakeConfirm(Node) returns (HandshakeConfirmResp) {};
 }
