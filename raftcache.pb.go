@@ -30,18 +30,24 @@ const (
 	Node_ALONE        Node_Statuses = 0
 	Node_INGROUP      Node_Statuses = 1
 	Node_DISCONNECTED Node_Statuses = 2
+	Node_INITIATING   Node_Statuses = 3
+	Node_HANDSHAKING  Node_Statuses = 4
 )
 
 var Node_Statuses_name = map[int32]string{
 	0: "ALONE",
 	1: "INGROUP",
 	2: "DISCONNECTED",
+	3: "INITIATING",
+	4: "HANDSHAKING",
 }
 
 var Node_Statuses_value = map[string]int32{
 	"ALONE":        0,
 	"INGROUP":      1,
 	"DISCONNECTED": 2,
+	"INITIATING":   3,
+	"HANDSHAKING":  4,
 }
 
 func (x Node_Statuses) String() string {
@@ -59,6 +65,7 @@ const (
 	JoinResp_ALREADYJOINED JoinResp_Results = 1
 	JoinResp_REJECTED      JoinResp_Results = 2
 	JoinResp_PINGFAIL      JoinResp_Results = 3
+	JoinResp_TRYLATER      JoinResp_Results = 4
 )
 
 var JoinResp_Results_name = map[int32]string{
@@ -66,6 +73,7 @@ var JoinResp_Results_name = map[int32]string{
 	1: "ALREADYJOINED",
 	2: "REJECTED",
 	3: "PINGFAIL",
+	4: "TRYLATER",
 }
 
 var JoinResp_Results_value = map[string]int32{
@@ -73,6 +81,7 @@ var JoinResp_Results_value = map[string]int32{
 	"ALREADYJOINED": 1,
 	"REJECTED":      2,
 	"PINGFAIL":      3,
+	"TRYLATER":      4,
 }
 
 func (x JoinResp_Results) String() string {
@@ -109,6 +118,59 @@ func (x LeaveResp_Results) String() string {
 
 func (LeaveResp_Results) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_f886bd89b3f134d3, []int{3, 0}
+}
+
+type HandshakeResp_Results int32
+
+const (
+	HandshakeResp_SUCCESS  HandshakeResp_Results = 0
+	HandshakeResp_PINGFAIL HandshakeResp_Results = 1
+	HandshakeResp_TRYLATER HandshakeResp_Results = 2
+)
+
+var HandshakeResp_Results_name = map[int32]string{
+	0: "SUCCESS",
+	1: "PINGFAIL",
+	2: "TRYLATER",
+}
+
+var HandshakeResp_Results_value = map[string]int32{
+	"SUCCESS":  0,
+	"PINGFAIL": 1,
+	"TRYLATER": 2,
+}
+
+func (x HandshakeResp_Results) String() string {
+	return proto.EnumName(HandshakeResp_Results_name, int32(x))
+}
+
+func (HandshakeResp_Results) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_f886bd89b3f134d3, []int{4, 0}
+}
+
+type HandshakeConfirmResp_Results int32
+
+const (
+	HandshakeConfirmResp_SUCCESS HandshakeConfirmResp_Results = 0
+	HandshakeConfirmResp_FAILED  HandshakeConfirmResp_Results = 1
+)
+
+var HandshakeConfirmResp_Results_name = map[int32]string{
+	0: "SUCCESS",
+	1: "FAILED",
+}
+
+var HandshakeConfirmResp_Results_value = map[string]int32{
+	"SUCCESS": 0,
+	"FAILED":  1,
+}
+
+func (x HandshakeConfirmResp_Results) String() string {
+	return proto.EnumName(HandshakeConfirmResp_Results_name, int32(x))
+}
+
+func (HandshakeConfirmResp_Results) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_f886bd89b3f134d3, []int{5, 0}
 }
 
 type Empty struct {
@@ -299,46 +361,153 @@ func (m *LeaveResp) GetMessage() string {
 	return ""
 }
 
+type HandshakeResp struct {
+	Result               HandshakeResp_Results `protobuf:"varint,1,opt,name=Result,proto3,enum=raftcache.HandshakeResp_Results" json:"Result,omitempty"`
+	Message              string                `protobuf:"bytes,2,opt,name=Message,proto3" json:"Message,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *HandshakeResp) Reset()         { *m = HandshakeResp{} }
+func (m *HandshakeResp) String() string { return proto.CompactTextString(m) }
+func (*HandshakeResp) ProtoMessage()    {}
+func (*HandshakeResp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f886bd89b3f134d3, []int{4}
+}
+
+func (m *HandshakeResp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_HandshakeResp.Unmarshal(m, b)
+}
+func (m *HandshakeResp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_HandshakeResp.Marshal(b, m, deterministic)
+}
+func (m *HandshakeResp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HandshakeResp.Merge(m, src)
+}
+func (m *HandshakeResp) XXX_Size() int {
+	return xxx_messageInfo_HandshakeResp.Size(m)
+}
+func (m *HandshakeResp) XXX_DiscardUnknown() {
+	xxx_messageInfo_HandshakeResp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_HandshakeResp proto.InternalMessageInfo
+
+func (m *HandshakeResp) GetResult() HandshakeResp_Results {
+	if m != nil {
+		return m.Result
+	}
+	return HandshakeResp_SUCCESS
+}
+
+func (m *HandshakeResp) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
+type HandshakeConfirmResp struct {
+	Result               HandshakeConfirmResp_Results `protobuf:"varint,1,opt,name=Result,proto3,enum=raftcache.HandshakeConfirmResp_Results" json:"Result,omitempty"`
+	Message              string                       `protobuf:"bytes,2,opt,name=Message,proto3" json:"Message,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *HandshakeConfirmResp) Reset()         { *m = HandshakeConfirmResp{} }
+func (m *HandshakeConfirmResp) String() string { return proto.CompactTextString(m) }
+func (*HandshakeConfirmResp) ProtoMessage()    {}
+func (*HandshakeConfirmResp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f886bd89b3f134d3, []int{5}
+}
+
+func (m *HandshakeConfirmResp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_HandshakeConfirmResp.Unmarshal(m, b)
+}
+func (m *HandshakeConfirmResp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_HandshakeConfirmResp.Marshal(b, m, deterministic)
+}
+func (m *HandshakeConfirmResp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HandshakeConfirmResp.Merge(m, src)
+}
+func (m *HandshakeConfirmResp) XXX_Size() int {
+	return xxx_messageInfo_HandshakeConfirmResp.Size(m)
+}
+func (m *HandshakeConfirmResp) XXX_DiscardUnknown() {
+	xxx_messageInfo_HandshakeConfirmResp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_HandshakeConfirmResp proto.InternalMessageInfo
+
+func (m *HandshakeConfirmResp) GetResult() HandshakeConfirmResp_Results {
+	if m != nil {
+		return m.Result
+	}
+	return HandshakeConfirmResp_SUCCESS
+}
+
+func (m *HandshakeConfirmResp) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterEnum("raftcache.Node_Statuses", Node_Statuses_name, Node_Statuses_value)
 	proto.RegisterEnum("raftcache.JoinResp_Results", JoinResp_Results_name, JoinResp_Results_value)
 	proto.RegisterEnum("raftcache.LeaveResp_Results", LeaveResp_Results_name, LeaveResp_Results_value)
+	proto.RegisterEnum("raftcache.HandshakeResp_Results", HandshakeResp_Results_name, HandshakeResp_Results_value)
+	proto.RegisterEnum("raftcache.HandshakeConfirmResp_Results", HandshakeConfirmResp_Results_name, HandshakeConfirmResp_Results_value)
 	proto.RegisterType((*Empty)(nil), "raftcache.Empty")
 	proto.RegisterType((*Node)(nil), "raftcache.Node")
 	proto.RegisterType((*JoinResp)(nil), "raftcache.JoinResp")
 	proto.RegisterType((*LeaveResp)(nil), "raftcache.LeaveResp")
+	proto.RegisterType((*HandshakeResp)(nil), "raftcache.HandshakeResp")
+	proto.RegisterType((*HandshakeConfirmResp)(nil), "raftcache.HandshakeConfirmResp")
 }
 
 func init() { proto.RegisterFile("raftcache.proto", fileDescriptor_f886bd89b3f134d3) }
 
 var fileDescriptor_f886bd89b3f134d3 = []byte{
-	// 402 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xcf, 0x6e, 0xd3, 0x40,
-	0x10, 0xc6, 0xbd, 0xf9, 0xef, 0x69, 0x49, 0x97, 0xa1, 0x07, 0xab, 0x20, 0x54, 0xed, 0x29, 0x07,
-	0x64, 0x2a, 0x37, 0x2f, 0x60, 0xd9, 0x4b, 0xe4, 0xc8, 0xac, 0xa3, 0x75, 0x7b, 0xe0, 0x68, 0x9a,
-	0x6d, 0x89, 0x04, 0xb1, 0xe5, 0xdd, 0x20, 0xf1, 0x18, 0x9c, 0xb9, 0xf2, 0x42, 0xbc, 0x11, 0xb2,
-	0x63, 0x17, 0x2b, 0x0d, 0x52, 0x8f, 0xf3, 0xed, 0xe7, 0x99, 0xef, 0x37, 0x1e, 0x38, 0x2b, 0xb3,
-	0x7b, 0x73, 0x97, 0xdd, 0x7d, 0x51, 0x6e, 0x51, 0xe6, 0x26, 0x47, 0xfb, 0x51, 0x60, 0x63, 0x18,
-	0xf2, 0x6f, 0x85, 0xf9, 0xc1, 0x7e, 0x13, 0x18, 0x88, 0x7c, 0xad, 0xf0, 0x1c, 0x86, 0x8b, 0x32,
-	0xdf, 0x15, 0x0e, 0xb9, 0x24, 0x33, 0x5b, 0xee, 0x0b, 0x7c, 0x0b, 0x10, 0x6f, 0xb4, 0x51, 0x5b,
-	0x7f, 0xbd, 0x2e, 0x9d, 0x5e, 0xfd, 0xd4, 0x51, 0xf0, 0x0a, 0x46, 0xa9, 0xc9, 0xcc, 0x4e, 0x3b,
-	0xfd, 0x4b, 0x32, 0x9b, 0x7a, 0x8e, 0xfb, 0x6f, 0x68, 0xd5, 0xd6, 0xdd, 0xbf, 0x2a, 0x2d, 0x1b,
-	0x1f, 0x9b, 0xc3, 0xa4, 0xd5, 0xd0, 0x86, 0xa1, 0x1f, 0x27, 0x82, 0x53, 0x0b, 0x4f, 0x60, 0x1c,
-	0x89, 0x85, 0x4c, 0x6e, 0x57, 0x94, 0x20, 0x85, 0xd3, 0x30, 0x4a, 0x83, 0x44, 0x08, 0x1e, 0xdc,
-	0xf0, 0x90, 0xf6, 0xd8, 0x1f, 0x02, 0x93, 0x65, 0xbe, 0xd9, 0x4a, 0xa5, 0x0b, 0xbc, 0x86, 0x91,
-	0x54, 0x7a, 0xf7, 0xd5, 0xd4, 0x59, 0xa7, 0xde, 0xeb, 0xce, 0xd0, 0xd6, 0xe4, 0xee, 0x1d, 0x5a,
-	0x36, 0x56, 0x74, 0x60, 0xfc, 0x51, 0x69, 0x9d, 0x3d, 0xa8, 0x06, 0xa3, 0x2d, 0xf1, 0x3d, 0x40,
-	0x0d, 0x5b, 0xe5, 0xad, 0x38, 0xfa, 0xb3, 0x13, 0xef, 0xec, 0x80, 0x43, 0x76, 0x2c, 0x8c, 0xc3,
-	0xb8, 0xe9, 0x5e, 0xc5, 0x4e, 0x6f, 0x83, 0x80, 0xa7, 0x29, 0xb5, 0xf0, 0x25, 0xbc, 0xf0, 0x63,
-	0xc9, 0xfd, 0xf0, 0xd3, 0x32, 0x89, 0x04, 0x0f, 0x29, 0xc1, 0x53, 0x98, 0x48, 0xbe, 0x6c, 0x28,
-	0xaa, 0x6a, 0x15, 0x89, 0xc5, 0x07, 0x3f, 0x8a, 0x69, 0x9f, 0xfd, 0x24, 0x60, 0xc7, 0x2a, 0xfb,
-	0xae, 0x6a, 0xa8, 0xf9, 0x01, 0xd4, 0x9b, 0x4e, 0x82, 0x47, 0xd7, 0xf3, 0xa9, 0xd8, 0xfc, 0x3f,
-	0x21, 0xbb, 0x89, 0x08, 0x4e, 0x01, 0x44, 0x72, 0xd3, 0x6e, 0xbe, 0xe7, 0xfd, 0x22, 0x60, 0xcb,
-	0xec, 0xde, 0x04, 0xd5, 0x5c, 0x7c, 0x07, 0x83, 0xd5, 0x66, 0xfb, 0x80, 0xb4, 0x93, 0xa5, 0x3e,
-	0x9b, 0x8b, 0x27, 0x0a, 0xb3, 0xd0, 0x85, 0x41, 0xb5, 0x7d, 0x3c, 0xdc, 0xdd, 0xc5, 0xab, 0x23,
-	0xff, 0x87, 0x59, 0x78, 0x05, 0xc3, 0x1a, 0xec, 0xe9, 0x07, 0xe7, 0xc7, 0xd8, 0x99, 0xf5, 0x79,
-	0x54, 0xdf, 0xf1, 0xf5, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x11, 0x93, 0x44, 0xbb, 0xda, 0x02,
-	0x00, 0x00,
+	// 548 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x94, 0xcd, 0x6e, 0xd3, 0x40,
+	0x14, 0x85, 0x3d, 0xf9, 0xf7, 0x6d, 0x9b, 0x98, 0x4b, 0x16, 0x56, 0x41, 0x10, 0xcd, 0x86, 0x2c,
+	0x50, 0xa8, 0xd2, 0x0a, 0x75, 0x87, 0x2c, 0xc7, 0x4d, 0x1c, 0xcc, 0x24, 0x1a, 0x3b, 0x8b, 0x2e,
+	0x4d, 0x32, 0x69, 0x23, 0x5a, 0x3b, 0x8a, 0x1d, 0x24, 0x1e, 0x83, 0x05, 0xe2, 0x89, 0x78, 0x04,
+	0xd6, 0xbc, 0x0a, 0x1a, 0xe7, 0xa7, 0xae, 0x93, 0x08, 0xba, 0x9c, 0x3b, 0x67, 0xee, 0x7c, 0xe7,
+	0xcc, 0xb5, 0xa1, 0xb6, 0xf0, 0xa7, 0xf1, 0xd8, 0x1f, 0xdf, 0x8a, 0xd6, 0x7c, 0x11, 0xc6, 0x21,
+	0xaa, 0xdb, 0x02, 0x2d, 0x43, 0xd1, 0xba, 0x9f, 0xc7, 0xdf, 0xe8, 0x2f, 0x02, 0x05, 0x16, 0x4e,
+	0x04, 0xd6, 0xa1, 0xd8, 0x5d, 0x84, 0xcb, 0xb9, 0x4e, 0x1a, 0xa4, 0xa9, 0xf2, 0xd5, 0x02, 0x5f,
+	0x01, 0x38, 0xb3, 0x28, 0x16, 0x81, 0x31, 0x99, 0x2c, 0xf4, 0x5c, 0xb2, 0x95, 0xaa, 0xe0, 0x19,
+	0x94, 0xdc, 0xd8, 0x8f, 0x97, 0x91, 0x9e, 0x6f, 0x90, 0x66, 0xb5, 0xad, 0xb7, 0x1e, 0x2e, 0x95,
+	0x6d, 0x5b, 0xab, 0x5d, 0x11, 0xf1, 0xb5, 0x8e, 0x8e, 0xa0, 0xb2, 0xa9, 0xa1, 0x0a, 0x45, 0xc3,
+	0x19, 0x30, 0x4b, 0x53, 0xf0, 0x08, 0xca, 0x36, 0xeb, 0xf2, 0xc1, 0x68, 0xa8, 0x11, 0xd4, 0xe0,
+	0xb8, 0x63, 0xbb, 0xe6, 0x80, 0x31, 0xcb, 0xf4, 0xac, 0x8e, 0x96, 0xc3, 0x2a, 0x80, 0xcd, 0x6c,
+	0xcf, 0x36, 0x3c, 0x9b, 0x75, 0xb5, 0x3c, 0xd6, 0xe0, 0xa8, 0x67, 0xb0, 0x8e, 0xdb, 0x33, 0x3e,
+	0xca, 0x42, 0x81, 0xfe, 0x21, 0x50, 0xe9, 0x87, 0xb3, 0x80, 0x8b, 0x68, 0x8e, 0xe7, 0x50, 0xe2,
+	0x22, 0x5a, 0xde, 0xc5, 0x89, 0x99, 0x6a, 0xfb, 0x45, 0x8a, 0x6a, 0x23, 0x6a, 0xad, 0x14, 0x11,
+	0x5f, 0x4b, 0x51, 0x87, 0xf2, 0x27, 0x11, 0x45, 0xfe, 0x8d, 0x58, 0xfb, 0xdc, 0x2c, 0xf1, 0x1d,
+	0x40, 0x92, 0x86, 0x34, 0x24, 0x8d, 0xe6, 0x9b, 0x47, 0xed, 0x5a, 0xc6, 0x28, 0x4f, 0x49, 0xa8,
+	0x0b, 0xe5, 0x75, 0x77, 0xe9, 0xcb, 0x1d, 0x99, 0xa6, 0xe5, 0xba, 0x9a, 0x82, 0xcf, 0xe0, 0xc4,
+	0x70, 0xb8, 0x65, 0x74, 0xae, 0xfb, 0x03, 0x9b, 0x59, 0x1d, 0x8d, 0xe0, 0x31, 0x54, 0xb8, 0xd5,
+	0xdf, 0xd8, 0x3c, 0x86, 0xca, 0xd0, 0x66, 0xdd, 0x2b, 0xc3, 0x76, 0xb4, 0xbc, 0x5c, 0x79, 0xfc,
+	0xda, 0x31, 0x3c, 0x8b, 0x6b, 0x05, 0xfa, 0x9d, 0x80, 0xea, 0x08, 0xff, 0xab, 0x48, 0x2c, 0x5e,
+	0x64, 0x2c, 0xbe, 0x4c, 0xf1, 0x6c, 0x55, 0xff, 0xef, 0x91, 0x5e, 0x1c, 0x40, 0x4e, 0xf3, 0x11,
+	0xf9, 0x0c, 0x6c, 0xe0, 0x6d, 0x1e, 0x2a, 0x47, 0x7f, 0x12, 0x38, 0xe9, 0xf9, 0xc1, 0x24, 0xba,
+	0xf5, 0xbf, 0xac, 0xb8, 0x2e, 0x33, 0x5c, 0x8d, 0x14, 0xd7, 0x23, 0xe5, 0x13, 0xd8, 0xda, 0x87,
+	0xd9, 0xb6, 0x69, 0x91, 0x47, 0x69, 0xe5, 0xe8, 0x0f, 0x02, 0xf5, 0xed, 0x7d, 0x66, 0x18, 0x4c,
+	0x67, 0x8b, 0xfb, 0x04, 0xf0, 0x43, 0x06, 0xf0, 0xcd, 0x3e, 0xc0, 0xd4, 0x81, 0x27, 0x70, 0xd2,
+	0x03, 0x9c, 0x00, 0x25, 0xc9, 0x28, 0x13, 0x6c, 0xff, 0xce, 0x81, 0xca, 0xfd, 0x69, 0x6c, 0xca,
+	0x0b, 0xf1, 0x2d, 0x14, 0x86, 0xb3, 0xe0, 0x06, 0xb5, 0x14, 0x44, 0xf2, 0x5d, 0x9e, 0xee, 0x54,
+	0xa8, 0x82, 0x2d, 0x28, 0xc8, 0xe9, 0xc5, 0xec, 0xec, 0x9d, 0x3e, 0xdf, 0x33, 0xdf, 0x54, 0xc1,
+	0x33, 0x28, 0x26, 0xa3, 0xb0, 0x7b, 0xa0, 0xbe, 0x6f, 0x5a, 0xa8, 0x82, 0x97, 0xa0, 0x6e, 0x33,
+	0xd8, 0x3d, 0xa5, 0x1f, 0x7a, 0x4b, 0xaa, 0xe0, 0x15, 0x68, 0xd9, 0xf4, 0x76, 0x1b, 0xbc, 0xfe,
+	0x47, 0xd6, 0x54, 0xc1, 0xf7, 0x50, 0x7b, 0xd8, 0xf1, 0x83, 0xb1, 0xb8, 0xdb, 0x6d, 0xb3, 0x27,
+	0x9b, 0xcf, 0xa5, 0xe4, 0x17, 0x77, 0xfe, 0x37, 0x00, 0x00, 0xff, 0xff, 0x88, 0x75, 0xef, 0x0a,
+	0xf5, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -356,6 +525,9 @@ type RaftCacheClient interface {
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	Join(ctx context.Context, in *Node, opts ...grpc.CallOption) (*JoinResp, error)
 	Leave(ctx context.Context, in *Node, opts ...grpc.CallOption) (*LeaveResp, error)
+	Handshake(ctx context.Context, in *Node, opts ...grpc.CallOption) (*HandshakeResp, error)
+	HandshakeConfirm(ctx context.Context, in *Node, opts ...grpc.CallOption) (*HandshakeConfirmResp, error)
+	HandshakeCancel(ctx context.Context, in *Node, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type raftCacheClient struct {
@@ -393,11 +565,41 @@ func (c *raftCacheClient) Leave(ctx context.Context, in *Node, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *raftCacheClient) Handshake(ctx context.Context, in *Node, opts ...grpc.CallOption) (*HandshakeResp, error) {
+	out := new(HandshakeResp)
+	err := c.cc.Invoke(ctx, "/raftcache.RaftCache/Handshake", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *raftCacheClient) HandshakeConfirm(ctx context.Context, in *Node, opts ...grpc.CallOption) (*HandshakeConfirmResp, error) {
+	out := new(HandshakeConfirmResp)
+	err := c.cc.Invoke(ctx, "/raftcache.RaftCache/HandshakeConfirm", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *raftCacheClient) HandshakeCancel(ctx context.Context, in *Node, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/raftcache.RaftCache/HandshakeCancel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RaftCacheServer is the server API for RaftCache service.
 type RaftCacheServer interface {
 	Ping(context.Context, *Empty) (*Empty, error)
 	Join(context.Context, *Node) (*JoinResp, error)
 	Leave(context.Context, *Node) (*LeaveResp, error)
+	Handshake(context.Context, *Node) (*HandshakeResp, error)
+	HandshakeConfirm(context.Context, *Node) (*HandshakeConfirmResp, error)
+	HandshakeCancel(context.Context, *Node) (*Empty, error)
 }
 
 // UnimplementedRaftCacheServer can be embedded to have forward compatible implementations.
@@ -412,6 +614,15 @@ func (*UnimplementedRaftCacheServer) Join(ctx context.Context, req *Node) (*Join
 }
 func (*UnimplementedRaftCacheServer) Leave(ctx context.Context, req *Node) (*LeaveResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Leave not implemented")
+}
+func (*UnimplementedRaftCacheServer) Handshake(ctx context.Context, req *Node) (*HandshakeResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Handshake not implemented")
+}
+func (*UnimplementedRaftCacheServer) HandshakeConfirm(ctx context.Context, req *Node) (*HandshakeConfirmResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HandshakeConfirm not implemented")
+}
+func (*UnimplementedRaftCacheServer) HandshakeCancel(ctx context.Context, req *Node) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HandshakeCancel not implemented")
 }
 
 func RegisterRaftCacheServer(s *grpc.Server, srv RaftCacheServer) {
@@ -472,6 +683,60 @@ func _RaftCache_Leave_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RaftCache_Handshake_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Node)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RaftCacheServer).Handshake(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raftcache.RaftCache/Handshake",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftCacheServer).Handshake(ctx, req.(*Node))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RaftCache_HandshakeConfirm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Node)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RaftCacheServer).HandshakeConfirm(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raftcache.RaftCache/HandshakeConfirm",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftCacheServer).HandshakeConfirm(ctx, req.(*Node))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RaftCache_HandshakeCancel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Node)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RaftCacheServer).HandshakeCancel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raftcache.RaftCache/HandshakeCancel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftCacheServer).HandshakeCancel(ctx, req.(*Node))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _RaftCache_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "raftcache.RaftCache",
 	HandlerType: (*RaftCacheServer)(nil),
@@ -487,6 +752,18 @@ var _RaftCache_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Leave",
 			Handler:    _RaftCache_Leave_Handler,
+		},
+		{
+			MethodName: "Handshake",
+			Handler:    _RaftCache_Handshake_Handler,
+		},
+		{
+			MethodName: "HandshakeConfirm",
+			Handler:    _RaftCache_HandshakeConfirm_Handler,
+		},
+		{
+			MethodName: "HandshakeCancel",
+			Handler:    _RaftCache_HandshakeCancel_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

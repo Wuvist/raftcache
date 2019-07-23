@@ -9,6 +9,8 @@ message Node {
     ALONE = 0;
     INGROUP = 1;
     DISCONNECTED = 2;
+    INITIATING = 3;
+    HANDSHAKING = 4;
   }
 
   string Group = 1;
@@ -22,6 +24,7 @@ message JoinResp {
     ALREADYJOINED = 1;
     REJECTED = 2;
     PINGFAIL = 3;
+    TRYLATER = 4;
   }
 
   Results Result = 1;
@@ -40,8 +43,32 @@ message LeaveResp {
   string Message = 2;
 }
 
+message HandshakeResp {
+  enum Results {
+    SUCCESS = 0;
+    PINGFAIL = 1;
+    TRYLATER = 2;
+  }
+
+  Results Result = 1;
+  string Message = 2;
+}
+
+message HandshakeConfirmResp {
+  enum Results {
+    SUCCESS = 0;
+    FAILED = 1;
+  }
+
+  Results Result = 1;
+  string Message = 2;
+}
+
 service RaftCache {
   rpc Ping(Empty) returns (Empty) {};
   rpc Join(Node) returns (JoinResp) {};
   rpc Leave(Node) returns (LeaveResp) {};
+  rpc Handshake(Node) returns (HandshakeResp) {};
+  rpc HandshakeConfirm(Node) returns (HandshakeConfirmResp) {};
+  rpc HandshakeCancel(Node) returns (Empty) {};
 }

@@ -60,20 +60,17 @@ func TestServerFail(t *testing.T) {
 		t.Error("server should not start")
 	}
 
-	println(server.String())
+	if server.String() != `Node: Group:"test" ListenAddr:"-1" ` {
+		t.Error("server should not start")
+	}
 }
 
 func TestJoinSelf(t *testing.T) {
 	s1 := getServer("test", ":0")
 	defer s1.Stop()
-	client, conn := getClient(s1)
-	defer conn.Close()
 
-	n := new(Node)
-	n.Group = "test"
-	n.ListenAddr = s1.node.ListenAddr
+	resp, _ := s1.peerJoin(s1.node.ListenAddr)
 
-	resp, _ := client.Join(context.Background(), n)
 	if resp.Result != JoinResp_ALREADYJOINED || resp.Message != "Can't join self" {
 		t.Errorf("Invalid Join result %s", resp)
 	}
@@ -82,46 +79,123 @@ func TestJoinSelf(t *testing.T) {
 func TestJoin(t *testing.T) {
 	s1 := getServer("test", ":0")
 	defer s1.Stop()
-	client, conn := getClient(s1)
-	defer conn.Close()
 
 	s2 := getServer("test", ":0")
 	defer s2.Stop()
 
-	n := new(Node)
-	n.ListenAddr = s2.node.ListenAddr
-
-	resp, err := client.Join(context.Background(), n)
-	if err != nil {
-		t.Error(err)
-	}
+	s1.node.Group = ""
+	resp, _ := s1.peerJoin(s2.node.ListenAddr)
 	if resp.Result != JoinResp_REJECTED || resp.Message != "Invalid group name" {
 		t.Errorf("Should not jion: %s", resp)
 	}
 
-	n.Group = "test"
-	n.Status = Node_INGROUP
-	resp, _ = client.Join(context.Background(), n)
-	if resp.Result != JoinResp_REJECTED || resp.Message != "Invalid group status INGROUP" {
+	s1.node.Group = "test"
+	s1.node.Status = Node_INGROUP
+	_, err := s1.peerJoin(s2.node.ListenAddr)
+	if err == nil || err.Error() != "Not allow to set status from INGROUP to INITIATING" {
 		t.Errorf("Should not jion: %s", resp)
 	}
 
-	n.Status = Node_ALONE
-	n.Group = "test"
-	resp, _ = client.Join(context.Background(), n)
+	s1.node.Status = Node_ALONE
+	s1.node.Group = "test"
+	resp, _ = s1.peerJoin(s2.node.ListenAddr)
 	if resp.Result != JoinResp_SUCCESS {
 		t.Errorf("Invalid Join result %s", resp)
 	}
 
-	resp, _ = client.Join(context.Background(), n)
+	s1.node.Status = Node_ALONE
+	resp, _ = s1.peerJoin(s2.node.ListenAddr)
 	if resp.Result != JoinResp_ALREADYJOINED || resp.Message != "Already in group" {
 		t.Errorf("Invalid Join result %s", resp)
 	}
 
-	s1.node.Status = Node_DISCONNECTED
-	resp, _ = client.Join(context.Background(), n)
+	s2.node.Status = Node_DISCONNECTED
+	resp, err = s1.peerJoin(s2.node.ListenAddr)
 	if resp.Result != JoinResp_REJECTED || resp.Message != "Can't join a disconnected node" {
 		t.Errorf("Invalid Join result %s", resp)
+	}
+}
+
+func checkServerGroup(t *testing.T, serverGroup []*GRPCServer) {
+	for _, testServer := range serverGroup {
+		for _, checkServer := range serverGroup {
+			if !checkServerInGroup(testServer.node.ListenAddr, checkServer) {
+				t.Errorf("Cann't find server %s in group", testServer.node.ListenAddr)
+			}
+		}
+	}
+}
+
+func checkServerInGroup(listenAddr string, s *GRPCServer) bool {
+	for _, n := range s.node.GroupNodes {
+		if listenAddr == n.ListenAddr {
+			return true
+		}
+	}
+
+	return false
+}
+
+func TestMultiJoin(t *testing.T) {
+	s1 := getServer("test", ":0")
+	defer s1.Stop()
+
+	s2 := getServer("test", ":0")
+	defer s2.Stop()
+
+	s3 := getServer("test", ":0")
+	defer s2.Stop()
+
+	resp, _ := s1.peerJoin(s2.node.ListenAddr)
+	if resp.Result != JoinResp_SUCCESS {
+		t.Errorf("Invalid Join result %s", resp)
+	}
+
+	checkServerGroup(t, []*GRPCServer{s1, s2})
+
+	resp, _ = s3.peerJoin(s2.node.ListenAddr)
+	if resp.Result != JoinResp_SUCCESS {
+		t.Errorf("Invalid Join result %s", resp)
+	}
+
+	checkServerGroup(t, []*GRPCServer{s1, s2, s3})
+}
+
+func TestMultiJoinConcurrnt(t *testing.T) {
+	s1 := getServer("test", ":0")
+	defer s1.Stop()
+
+	s2 := getServer("test", ":0")
+	defer s2.Stop()
+
+	s3 := getServer("test", ":0")
+	defer s2.Stop()
+
+	c := make(chan *JoinResp)
+
+	j := func(s *GRPCServer) {
+		resp, _ := s.peerJoin(s1.node.ListenAddr)
+		c <- resp
+	}
+
+	go j(s2)
+	go j(s3)
+
+	r1, r2 := <-c, <-c
+	if r1.Result == JoinResp_SUCCESS {
+		if r2.Result != JoinResp_TRYLATER {
+			t.Errorf("Join error: %s %s", r1.Result.String(), r2.Result.String())
+		}
+	}
+
+	if r2.Result == JoinResp_SUCCESS {
+		if r1.Result != JoinResp_TRYLATER {
+			t.Errorf("Join error: %s %s", r1.Result.String(), r2.Result.String())
+		}
+	}
+
+	if r1.Result != JoinResp_SUCCESS && r2.Result != JoinResp_SUCCESS {
+		t.Errorf("Join error: %s %s", r1.Result.String(), r2.Result.String())
 	}
 }
 
