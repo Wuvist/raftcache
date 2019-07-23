@@ -115,6 +115,12 @@ func (r *RaftNode) ValidateJoin(node *Node) (resp *JoinResp) {
 		}
 	}
 
+	if r.Status == Node_INITIATING {
+		resp.Result = JoinResp_REJECTED
+		resp.Message = "Can't join a initiating node"
+		return
+	}
+
 	return
 }
 
