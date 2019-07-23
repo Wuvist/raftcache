@@ -2,8 +2,8 @@
 
 - [X] multi-join
   - [X] test
-- [ ] Concurrent multi-join
-  - [ ] test
+- [X] Concurrent multi-join
+  - [X] test
 - [ ] multi-join sync fail
   - [ ] test
 - [ ] leave from group
@@ -18,7 +18,7 @@
   - [ ] Confirm
 - [X] Cancel handshake
   - [ ] test
-- [ ] Join return GroupNodes
+- [X] Join return GroupNodes
 - [ ] Why if peer confirmed join, but failed to reply?
 
 ## quorum

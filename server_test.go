@@ -161,6 +161,44 @@ func TestMultiJoin(t *testing.T) {
 	checkServerGroup(t, []*GRPCServer{s1, s2, s3})
 }
 
+func TestMultiJoinConcurrnt(t *testing.T) {
+	s1 := getServer("test", ":0")
+	defer s1.Stop()
+
+	s2 := getServer("test", ":0")
+	defer s2.Stop()
+
+	s3 := getServer("test", ":0")
+	defer s2.Stop()
+
+	c := make(chan *JoinResp)
+
+	j := func(s *GRPCServer) {
+		resp, _ := s.peerJoin(s1.node.ListenAddr)
+		c <- resp
+	}
+
+	go j(s2)
+	go j(s3)
+
+	r1, r2 := <-c, <-c
+	if r1.Result == JoinResp_SUCCESS {
+		if r2.Result != JoinResp_TRYLATER {
+			t.Errorf("Join error: %s %s", r1.Result.String(), r2.Result.String())
+		}
+	}
+
+	if r2.Result == JoinResp_SUCCESS {
+		if r1.Result != JoinResp_TRYLATER {
+			t.Errorf("Join error: %s %s", r1.Result.String(), r2.Result.String())
+		}
+	}
+
+	if r1.Result != JoinResp_SUCCESS && r2.Result != JoinResp_SUCCESS {
+		t.Errorf("Join error: %s %s", r1.Result.String(), r2.Result.String())
+	}
+}
+
 func getClient(s *GRPCServer) (RaftCacheClient, *grpc.ClientConn) {
 	conn, err := grpc.Dial(s.node.ListenAddr, grpc.WithInsecure())
 	if err != nil {
