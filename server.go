@@ -197,7 +197,6 @@ func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 		}
 	}
 
-	// Should record handshaking addr
 	s.node.SetStatus(Node_INGROUP, "")
 
 	return s.node.Join(in)

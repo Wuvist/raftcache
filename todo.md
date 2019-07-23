@@ -1,7 +1,7 @@
 ## multi-join
 
-- [ ] multi-join
-  - [ ] test
+- [X] multi-join
+  - [X] test
 - [ ] Concurrent multi-join
   - [ ] test
 - [ ] multi-join sync fail
