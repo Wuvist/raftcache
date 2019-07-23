@@ -16,7 +16,8 @@
   - [ ] Jion
   - [ ] Handshake
   - [ ] Confirm
-- [ ] Cancel handshake
+- [X] Cancel handshake
+  - [ ] test
 - [ ] Join return GroupNodes
 - [ ] Why if peer confirmed join, but failed to reply?
 

@@ -15,6 +15,7 @@ type RaftNode struct {
 	handshakingNode string
 	muStatus        sync.Mutex
 	mu              sync.Mutex
+	preStatus       Node_Statuses
 }
 
 /*
@@ -39,6 +40,25 @@ func NewRaftNode(group, listenAddr string) (node *RaftNode, err error) {
 	return
 }
 
+// CancelHandshake cancel current handshake
+func (r *RaftNode) CancelHandshake(listenAddr string) (err error) {
+	r.muStatus.Lock()
+	defer r.muStatus.Unlock()
+
+	if r.Node.Status != Node_HANDSHAKING {
+		return fmt.Errorf("Not handshaking")
+	}
+
+	if r.handshakingNode != listenAddr {
+		return fmt.Errorf("Handshaking different node %s %s", r.handshakingNode, listenAddr)
+	}
+
+	r.Status = r.preStatus
+	r.handshakingNode = ""
+
+	return nil
+}
+
 // SetStatus set the node with new status; state machine checking is enforced
 func (r *RaftNode) SetStatus(status Node_Statuses, handshakingNode string) (existingStatus Node_Statuses, err error) {
 	r.muStatus.Lock()
@@ -55,6 +75,7 @@ func (r *RaftNode) SetStatus(status Node_Statuses, handshakingNode string) (exis
 				r.handshakingNode = ""
 			}
 
+			r.preStatus = existingStatus
 			return existingStatus, nil
 		}
 	}

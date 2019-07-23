@@ -154,6 +154,18 @@ func (s *GRPCServer) peerHandshakeConfirm(listenAddr string, in *Node) (*Handsha
 	return client.HandshakeConfirm(context.Background(), in)
 }
 
+func (s *GRPCServer) peerHandshakeCancel(listenAddr string, in *Node) error {
+	println("peerHandshakeCancel: " + listenAddr)
+	client, conn, err := s.getClient(listenAddr)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client.HandshakeCancel(context.Background(), in)
+	return nil
+}
+
 // Join take given node to join into group
 func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 	r := s.node.ValidateJoin(in)
@@ -175,16 +187,29 @@ func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 		return r, nil
 	}
 
+	var handShakeFailedNodes []Node
+	var handShakeDoneNodes []Node
+
 	for _, node := range s.node.GroupNodes {
 		if node.ListenAddr == s.node.ListenAddr {
 			continue
 		}
 		handshakeResult, err := s.peerHandshake(node.ListenAddr, in)
 		if err != nil || handshakeResult.Result != HandshakeResp_SUCCESS {
-			s.node.SetStatus(existingStatus, "")
-			r.Result = JoinResp_PINGFAIL
-			return r, nil
+			handShakeFailedNodes = append(handShakeFailedNodes, node)
+			break
 		}
+		handShakeDoneNodes = append(handShakeDoneNodes, node)
+	}
+
+	if len(handShakeFailedNodes) > 0 {
+		for _, node := range handShakeDoneNodes {
+			s.peerHandshakeCancel(node.ListenAddr, in)
+		}
+
+		s.node.SetStatus(existingStatus, "")
+		r.Result = JoinResp_PINGFAIL
+		return r, nil
 	}
 
 	for _, node := range s.node.GroupNodes {
@@ -223,6 +248,22 @@ func (s *GRPCServer) HandshakeConfirm(ctx context.Context, in *Node) (*Handshake
 	r.Result = HandshakeConfirmResp_SUCCESS
 
 	return r, nil
+}
+
+// HandshakeCancel cancel current handshake
+func (s *GRPCServer) HandshakeCancel(ctx context.Context, in *Node) (*Empty, error) {
+	if s.node.Status != Node_HANDSHAKING {
+		return &Empty{}, nil
+	}
+
+	err := s.node.CancelHandshake(in.ListenAddr)
+
+	// CancelHandshake don't return any error, as it's not meaningful for caller?
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	return &Empty{}, nil
 }
 
 // Handshake forwards join request to peer node for handshake validation

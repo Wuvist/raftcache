@@ -70,4 +70,5 @@ service RaftCache {
   rpc Leave(Node) returns (LeaveResp) {};
   rpc Handshake(Node) returns (HandshakeResp) {};
   rpc HandshakeConfirm(Node) returns (HandshakeConfirmResp) {};
+  rpc HandshakeCancel(Node) returns (Empty) {};
 }
