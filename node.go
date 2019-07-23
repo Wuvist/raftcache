@@ -11,9 +11,10 @@ import (
 // RaftNode represent a node in raftcache
 type RaftNode struct {
 	Node
-	GroupNodes []Node
-	muStatus   sync.Mutex
-	mu         sync.Mutex
+	GroupNodes      []Node
+	handshakingNode string
+	muStatus        sync.Mutex
+	mu              sync.Mutex
 }
 
 /*
@@ -39,7 +40,7 @@ func NewRaftNode(group, listenAddr string) (node *RaftNode, err error) {
 }
 
 // SetStatus set the node with new status; state machine checking is enforced
-func (r *RaftNode) SetStatus(status Node_Statuses) (existingStatus Node_Statuses, err error) {
+func (r *RaftNode) SetStatus(status Node_Statuses, handshakingNode string) (existingStatus Node_Statuses, err error) {
 	r.muStatus.Lock()
 	defer r.muStatus.Unlock()
 
@@ -48,6 +49,12 @@ func (r *RaftNode) SetStatus(status Node_Statuses) (existingStatus Node_Statuses
 	for _, s := range possibleStatues {
 		if s == status {
 			r.Status = status
+			if status == Node_HANDSHAKING {
+				r.handshakingNode = handshakingNode
+			} else {
+				r.handshakingNode = ""
+			}
+
 			return existingStatus, nil
 		}
 	}
@@ -77,12 +84,11 @@ func (r *RaftNode) ValidateJoin(node *Node) (resp *JoinResp) {
 		return
 	}
 
-	// todo: should validate Node_HANDSHAKING ip
-	// if r.Status == Node_HANDSHAKING {
-	// 	resp.Result = JoinResp_TRYLATER
-	// 	resp.Message = "Current node is handshaking"
-	// 	return
-	// }
+	if r.Status == Node_HANDSHAKING && r.handshakingNode != node.ListenAddr {
+		resp.Result = JoinResp_TRYLATER
+		resp.Message = "Current node is handshaking"
+		return
+	}
 
 	if r.Status == Node_DISCONNECTED {
 		resp.Result = JoinResp_REJECTED
@@ -126,7 +132,7 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 	newNode.Status = Node_INGROUP
 
 	if r.Status == Node_ALONE {
-		r.SetStatus(Node_INGROUP)
+		r.SetStatus(Node_INGROUP, "")
 	}
 
 	time.Sleep(1 * time.Microsecond)
@@ -172,7 +178,7 @@ func (r *RaftNode) Leave(node *Node) (resp *LeaveResp, err error) {
 	r.GroupNodes = nodes
 
 	if len(r.GroupNodes) == 1 {
-		r.SetStatus(Node_ALONE)
+		r.SetStatus(Node_ALONE, "")
 	}
 
 	resp.Result = LeaveResp_SUCCESS
