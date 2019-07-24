@@ -4,6 +4,7 @@
   - [X] test
 - [X] Concurrent multi-join
   - [X] test
+  - [ ] test multi node joining different node concurrently
 - [ ] multi-join sync fail
   - [ ] test
 - [ ] leave from group
