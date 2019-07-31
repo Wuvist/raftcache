@@ -96,8 +96,16 @@ func TestJoin(t *testing.T) {
 		t.Errorf("Should not jion: %s", resp)
 	}
 
+	s2.node.Status = Node_INITIATING
+	s1.node.Status = Node_ALONE
+	resp, err = s1.peerJoin(s2.node.ListenAddr)
+	if resp.Result != JoinResp_REJECTED || resp.Message != "Can't join a initiating node" {
+		t.Errorf("Invalid Join result %s", resp)
+	}
+
 	s1.node.Status = Node_ALONE
 	s1.node.Group = "test"
+	s2.node.Status = Node_ALONE
 	resp, _ = s1.peerJoin(s2.node.ListenAddr)
 	if resp.Result != JoinResp_SUCCESS {
 		t.Errorf("Invalid Join result %s", resp)
