@@ -169,6 +169,38 @@ func TestMultiJoin(t *testing.T) {
 	checkServerGroup(t, []*GRPCServer{s1, s2, s3})
 }
 
+func TestMultiJoinCancel(t *testing.T) {
+	s1 := getServer("test", ":0")
+	defer s1.Stop()
+
+	s2 := getServer("test", ":0")
+	defer s2.Stop()
+
+	s3 := getServer("test", ":0")
+	defer s2.Stop()
+
+	s4 := getServer("test", ":0")
+	defer s4.Stop()
+
+	s1.peerJoin(s2.node.ListenAddr)
+	s3.peerJoin(s2.node.ListenAddr)
+
+	checkServerGroup(t, []*GRPCServer{s1, s2, s3})
+
+	s3.node.Status = Node_INITIATING
+	resp, _ := s4.peerJoin(s2.node.ListenAddr)
+	if resp.Result != JoinResp_PINGFAIL {
+		t.Errorf("Invalid Join result %s", resp)
+	}
+
+	s3.node.Status = Node_INGROUP
+	resp, _ = s4.peerJoin(s2.node.ListenAddr)
+	if resp.Result != JoinResp_SUCCESS {
+		t.Errorf("Invalid Join result %s", resp)
+	}
+	checkServerGroup(t, []*GRPCServer{s1, s2, s3, s4})
+}
+
 func TestMultiJoinConcurrnt(t *testing.T) {
 	s1 := getServer("test", ":0")
 	defer s1.Stop()
