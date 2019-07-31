@@ -222,8 +222,6 @@ func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 		}
 	}
 
-	s.node.SetStatus(Node_INGROUP, "")
-
 	return s.node.Join(in)
 }
 
