@@ -161,7 +161,7 @@ func (r *RaftNode) Join(node *Node) (resp *JoinResp, err error) {
 		Status:     Node_INGROUP,
 	}
 
-	if r.Status == Node_ALONE {
+	if r.Status == Node_HANDSHAKING {
 		r.SetStatus(Node_INGROUP, "")
 	}
 

@@ -133,7 +133,6 @@ func (s *GRPCServer) peerPing(listenAddr string) error {
 }
 
 func (s *GRPCServer) peerHandshake(listenAddr string, in *Node) (*HandshakeResp, error) {
-	println("peerHandshake: " + listenAddr)
 	client, conn, err := s.getClient(listenAddr)
 	if err != nil {
 		return nil, err
@@ -144,7 +143,6 @@ func (s *GRPCServer) peerHandshake(listenAddr string, in *Node) (*HandshakeResp,
 }
 
 func (s *GRPCServer) peerHandshakeConfirm(listenAddr string, in *Node) (*HandshakeConfirmResp, error) {
-	println("peerHandshakeConfirm: " + listenAddr)
 	client, conn, err := s.getClient(listenAddr)
 	if err != nil {
 		return nil, err
@@ -155,7 +153,6 @@ func (s *GRPCServer) peerHandshakeConfirm(listenAddr string, in *Node) (*Handsha
 }
 
 func (s *GRPCServer) peerHandshakeCancel(listenAddr string, in *Node) error {
-	println("peerHandshakeCancel: " + listenAddr)
 	client, conn, err := s.getClient(listenAddr)
 	if err != nil {
 		return err
@@ -221,8 +218,6 @@ func (s *GRPCServer) Join(ctx context.Context, in *Node) (*JoinResp, error) {
 			log.Println("ConfirmJoin error: " + node.ListenAddr + " " + handshakeConfirmResult.String())
 		}
 	}
-
-	s.node.SetStatus(Node_INGROUP, "")
 
 	return s.node.Join(in)
 }
