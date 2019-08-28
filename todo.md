@@ -4,7 +4,7 @@
   - [X] test
 - [X] Concurrent multi-join
   - [X] test
-  - [ ] test multi node joining different node concurrently
+  - [ ] test multi nodes joining different node concurrently
 - [ ] multi-join sync fail
   - [ ] test
 - [ ] leave from group
@@ -14,7 +14,7 @@
 - [ ] validate client IP?
 - [X] ConfirmJoin check listenAddr with handshake
 - [ ] Add timeout
-  - [ ] Jion
+  - [ ] Join
   - [ ] Handshake
   - [ ] Confirm
 - [X] Cancel handshake
