@@ -2,7 +2,7 @@
 
 `RaftCache` aims to be the fastest & resilient cache system. It's mainly inspired [GroupCache](https://github.com/golang/groupcache) & [raft](https://raft.github.io/).
 
-If you are familiar with GroupCache, you could consider DriftCache to be the GroupCache that supports write & linery consistency; but it's **NOT** using raft consensus algorithm.
+If you are familiar with GroupCache, you could consider RaftCache to be the GroupCache that supports write & linery consistency; but it's **NOT** using raft consensus algorithm.
 
 ## Design Goal
 
